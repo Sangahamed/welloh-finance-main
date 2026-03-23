@@ -1,0 +1,493 @@
+# Welloh – Documentation Complète du Projet
+
+---
+
+## Table des matières
+
+1. [Présentation & Vision](#1-présentation--vision)
+2. [Fonctionnalités](#2-fonctionnalités)
+   - 2.1 [Cœur de simulation (trading)](#21-cœur-de-simulation-trading)
+   - 2.2 [Analyse financière (Gemini)](#22-analyse-financière-gemini)
+   - 2.3 [Mentor IA & Formation](#23-mentor-ia--formation)
+   - 2.4 [Marchés de prédiction (Polymarket‑like)](#24-marchés-de-prédiction-polymarket-like)
+   - 2.5 [Gamification & Talent ID](#25-gamification--talent-id)
+   - 2.6 [Social & Communauté](#26-social--communauté)
+3. [Architecture Technique](#3-architecture-technique)
+   - 3.1 [Vue d’ensemble](#31-vue-densemble)
+   - 3.2 [Stack détaillée](#32-stack-détaillée)
+   - 3.3 [Microservices](#33-microservices)
+   - 3.4 [Schéma des flux](#34-schéma-des-flux)
+4. [Base de données Supabase](#4-base-de-données-supabase)
+   - 4.1 [Tables principales](#41-tables-principales)
+   - 4.2 [Tables additionnelles (admin, support, flags)](#42-tables-additionnelles-admin-support-flags)
+   - 4.3 [Script SQL complet](#43-script-sql-complet)
+   - 4.4 [Row Level Security (RLS)](#44-row-level-security-rls)
+5. [Dashboard Administrateur](#5-dashboard-administrateur)
+   - 5.1 [Objectifs & utilisateurs](#51-objectifs--utilisateurs)
+   - 5.2 [Fonctionnalités clés](#52-fonctionnalités-clés)
+   - 5.3 [Architecture & intégration](#53-architecture--intégration)
+   - 5.4 [Tables dédiées](#54-tables-dédiées)
+   - 5.5 [Exemples d’implémentation](#55-exemples-dimplémentation)
+6. [Roadmap & Phases de développement](#6-roadmap--phases-de-développement)
+   - 6.1 [Phase 1 – Base & Trading (terminée)](#61-phase-1--base--trading-terminée)
+   - 6.2 [Phase 2 – Prédictions & Gamification (en cours)](#62-phase-2--prédictions--gamification-en-cours)
+   - 6.3 [Phase 3 – Talent ID & Social (planifiée)](#63-phase-3--talent-id--social-planifiée)
+   - 6.4 [Phase 4 – IA & Scale (planifiée)](#64-phase-4--ia--scale-planifiée)
+   - 6.5 [Phase 5 – Dashboard Admin & Outils (à venir)](#65-phase-5--dashboard-admin--outils-à-venir)
+7. [Guide de développement](#7-guide-de-développement)
+   - 7.1 [Prérequis](#71-prérequis)
+   - 7.2 [Installation](#72-installation)
+   - 7.3 [Structure du projet](#73-structure-du-projet)
+   - 7.4 [Conventions de code](#74-conventions-de-code)
+   - 7.5 [Tests & Qualité](#75-tests--qualité)
+8. [Sécurité & Conformité](#8-sécurité--conformité)
+9. [Monitoring & Observabilité](#9-monitoring--observabilité)
+10. [Contribuer au projet](#10-contribuer-au-projet)
+11. [Annexes](#11-annexes)
+
+---
+
+## 1. Présentation & Vision
+
+**Welloh** est une plateforme de simulation boursière et de prédictions sociales destinée à former la prochaine génération de traders, avec un accent particulier sur les marchés émergents africains.  
+La plateforme combine :
+
+- Un **simulateur de trading ultra‑réaliste** (ordres avancés, slippage, frais) sur les marchés mondiaux et africains.
+- Des **marchés de prédiction** (inspirés de Polymarket) pour développer la capacité d’analyse.
+- Un **système de gamification** (ligues, classements, cohortes, badges) pour identifier les talents.
+- Un **mentor IA** (basé sur Gemini) fournissant un feedback personnalisé, des quiz et une aide à la décision.
+
+**Objectif stratégique** : devenir le premier vivier de talents financiers en Afrique et une référence mondiale pour la formation pratique aux métiers de la finance.
+
+---
+
+## 2. Fonctionnalités
+
+### 2.1 Cœur de simulation (trading)
+- Portefeuilles virtuels multiples (dont capital initial 100 000 $)
+- Ordres : market, limit, stop‑loss, take‑profit, OCO, trailing stop
+- Simulation des frais (maker/taker), slippage, dividendes, splits
+- Accès aux marchés : NYSE, NASDAQ, LSE, Euronext, BRVM, JSE, NSE, crypto, forex,crypto,africaine ... 
+- Données temps réel (API Polygon) ou différées (Yahoo Finance)
+- Historique complet des transactions, export CSV
+- Watchlists et alertes personnalisées
+
+### 2.2 Analyse financière (Gemini)
+- Analyse fondamentale approfondie (rapport complet : métriques, projections, forces/faiblesses)
+- Comparaison concurrentielle côte‑à‑côte
+- Actualités récentes liées à la société
+- Graphiques interactifs personnalisables
+- Sauvegarde des analyses en base de données
+
+### 2.3 Mentor IA & Formation
+- Chatbot pédagogique (streaming de réponses) sur tous les sujets financiers
+- Feedback post‑trade : analyse automatique de la décision (note A–F, conseils)
+- Quiz personnalisés générés par IA à partir des erreurs récurrentes
+- Contenu éducatif structuré (parcours débutant, intermédiaire, focus Afrique)
+
+### 2.4 Marchés de prédiction (Polymarket‑like)
+- Création de prédictions avec date d’expiration, options multiples
+- Obligation de fournir une preuve d’analyse (texte, image) lors de la création
+- Carnets d’ordres pour chaque prédiction (achat/vente de tokens)
+- Chat en temps réel attaché à chaque prédiction
+- Résolution par admin ou oracle automatique
+
+### 2.5 Gamification & Talent ID
+- **Ligues** : Bronze, Silver, Gold, Sapphire, Diamond, Legend – promotion/relegation mensuelle
+- **Score composite** : PnL (50%) + Ratio de Sharpe (30%) + Précision des prédictions (20%)
+- **Cohortes « timeless »** : comparaison uniquement avec les utilisateurs de la même période d’inscription
+- **Badges & streaks** : récompenses pour séries gagnantes, prédictions exactes, gestion du risque
+- **Hall of Fame** : top traders mis en avant, possibilité de suivre leurs trades
+- **Matrice de compétences** : évaluation automatique sur plusieurs dimensions (gestion du risque, timing, analyse)
+
+### 2.6 Social & Communauté
+- Flux d’activité en temps réel des personnes suivies
+- Copie de portefeuilles (social trading) avec autorisation
+- Salles de trading virtuelles (groupes thématiques)
+- Système de mentorat : les traders d’élite peuvent devenir mentors, leurs trades sont visibles
+- Commentaires sur les trades et prédictions
+
+---
+
+## 3. Architecture Technique
+
+### 3.1 Vue d’ensemble
+
+```
+[Client (Web/Mobile)] → [Vercel (Next.js)] → [Middleware Auth]
+                         ↓
+[API Gateway (Next.js API routes + Hono pour WebSockets)]
+                         ↓
+[Microservices] ←→ [Kafka / BullMQ] ←→ [Redis] ←→ [PostgreSQL / TimescaleDB]
+     ↓
+[External APIs : Polygon, Gemini, Yahoo Finance, etc.]
+```
+
+### 3.2 Stack détaillée
+
+| Couche               | Technologies                                                                                               |
+|----------------------|------------------------------------------------------------------------------------------------------------|
+| **Frontend**         | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Shadcn/ui, TradingView Lightweight Charts     |
+| **Backend**          | Next.js API routes + Hono (WebSockets); services spécialisés : Go (leaderboard), Python (IA)               |
+| **Base de données**  | PostgreSQL (Supabase) + TimescaleDB (pour les séries temporelles)                                          |
+| **Cache & Queues**   | Redis (ZSETs pour classements, pub/sub), BullMQ (jobs), Apache Kafka (event streaming)                     |
+| **Authentification** | Supabase Auth (JWT, OAuth) + NextAuth.js pour la compatibilité Next.js                                     |
+| **External APIs**    | Polygon.io (real‑time), Yahoo Finance (gratuit), Gemini API (IA), Finnhub (news)                           |
+| **Hébergement**      | Vercel (frontend), Railway/Render (services), Upstash (Redis), Confluent Cloud (Kafka)                     |
+
+### 3.3 Microservices (planifiés)
+
+| Service              | Technologie  | Responsabilité                                                                 |
+|----------------------|--------------|--------------------------------------------------------------------------------|
+| `user-service`       | Node.js      | Gestion des comptes, profils, rôles, abonnements                               |
+| `trading-service`    | Node.js      | Exécution des ordres, mise à jour des portefeuilles, frais, slippage          |
+| `prediction-service` | Node.js      | Gestion des prédictions, carnets d’ordres, résolution, chat                    |
+| `leaderboard-service`| Go           | Calcul et mise à jour des classements (performance, scalabilité)               |
+| `analytics-service`  | Python       | Calcul du Sharpe, des indicateurs, préparation des données pour BI             |
+| `ai-service`         | Python       | Feedback IA, génération de quiz, chatbot, analyse de screenshots               |
+| `notification-service`| Node.js     | Envoi d’emails, push notifications, webhooks                                   |
+| `admin-service`      | Node.js      | Agrégation des données pour l’admin, gestion des flags, tickets                |
+
+### 3.4 Schéma des flux
+
+```mermaid
+graph TD
+    A[Utilisateur] -->|WebSocket| B[Socket.io Server]
+    A -->|HTTP| C[Next.js API Gateway]
+    C --> D{Authentification}
+    D -->|JWT| E[Microservice]
+    E --> F[(PostgreSQL)]
+    E --> G[(Redis)]
+    E --> H[Kafka]
+    H --> I[Analytics Service]
+    I --> J[(TimescaleDB)]
+    C --> K[Gemini API]
+    C --> L[Polygon.io]
+```
+
+---
+
+## 4. Base de données Supabase
+
+Supabase est utilisé pour l’authentification, le stockage des données principales, et les politiques de sécurité (RLS).  
+Les scripts SQL ci‑dessous créent toutes les tables nécessaires.
+
+### 4.1 Tables principales
+
+| Table               | Description                                                       |
+|---------------------|-------------------------------------------------------------------|
+| `profiles`          | Données publiques de l’utilisateur (nom, pays, institution, rôle) |
+| `portfolios`        | Portefeuilles virtuels (un par défaut, possibilité de plusieurs)  |
+| `holdings`          | Positions détenues dans un portefeuille                           |
+| `transactions`      | Historique des ordres (achat/vente)                               |
+| `watchlists`        | Listes de surveillance                                            |
+| `watchlist_items`   | Tickers dans les watchlists                                       |
+| `analysis_histories`| Rapports d’analyse sauvegardés                                    |
+| `analysis_alerts`   | Alertes personnalisées sur métriques financières                  |
+| `predictions`       | Prédictions créées par les utilisateurs                           |
+| `bets`              | Participations aux prédictions (tokens achetés/vendus)            |
+| `prediction_chats`  | Messages dans les chats attachés aux prédictions                  |
+| `badges`            | Définition des badges disponibles                                 |
+| `user_badges`       | Badges obtenus par les utilisateurs                               |
+
+### 4.2 Tables additionnelles (admin, support, flags)
+
+Ces tables sont nécessaires pour le dashboard administrateur et les fonctionnalités avancées.
+
+| Table               | Description                                                       |
+|---------------------|-------------------------------------------------------------------|
+| `system_settings`   | Configuration globale (clé‑valeur)                                |
+| `feature_flags`     | Activation/désactivation dynamique des fonctionnalités            |
+| `admin_logs`        | Journal des actions des administrateurs                           |
+| `reports`           | Signalements utilisateurs                                         |
+| `support_tickets`   | Tickets d’assistance                                              |
+| `ticket_messages`   | Messages dans les tickets                                         |
+| `system_health`     | Statut des services et API externes (métriques horaires)          |
+
+### 4.3 Script SQL complet
+
+Voir le script complet dans [scripts/supabase_schema.sql](scripts/supabase_schema.sql) (fichier externe à cette documentation).  
+Le script est idempotent et inclut :
+
+- Création des tables avec RLS activé
+- Politiques RLS pour les utilisateurs normaux et les administrateurs
+- Trigger `handle_new_user` pour créer automatiquement un profil, un portefeuille et une watchlist lors de l’inscription
+
+### 4.4 Row Level Security (RLS)
+
+Toutes les tables sont protégées par RLS.  
+Exemples de politiques :
+
+```sql
+-- Les utilisateurs ne voient que leurs propres données
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+-- Les administrateurs voient tout
+CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING ( (SELECT role FROM profiles WHERE id = auth.uid()) = 'admin' );
+```
+
+Le rôle `admin` est stocké dans `profiles.role`.
+
+---
+
+## 5. Dashboard Administrateur
+
+Le dashboard admin est une interface complète pour gérer la plateforme, avec des niveaux d’accès granulaires (RBAC). Il est intégré dans l’application Next.js sous `/admin`.
+
+### 5.1 Objectifs & utilisateurs
+
+- **Super‑admin** : gestion des paramètres globaux, accès à tous les logs
+- **Modérateur** : validation des prédictions, gestion des signalements
+- **Analyste** : visualisation des rapports BI, export de données
+- **Support** : gestion des tickets utilisateurs
+
+### 5.2 Fonctionnalités clés
+
+#### Vue d’ensemble
+- KPIs temps réel (utilisateurs actifs, trades, prédictions, tickets ouverts)
+- Graphiques d’évolution (actifs, inscriptions, répartition par ligue)
+- Carte mondiale des utilisateurs
+- Alerte en temps réel sur anomalies (panne API, pic de signalements)
+
+#### Gestion des utilisateurs
+- Recherche full‑text (email, nom, pays)
+- Vue détaillée : historique, portefeuille, badges, tickets, logs
+- Actions : suspension, changement de rôle, reset portefeuille, attribution de badge, envoi de notification
+
+#### Modération des prédictions
+- File d’attente des prédictions à valider
+- Validation/rejet avec motif
+- Gestion des signalements (résolution, bannissement temporaire)
+
+#### Configuration & paramètres
+- Feature flags (activation/désactivation instantanée)
+- Configuration des frais de simulation, des seuils de promotion
+- Messages système (bannières, notifications push)
+
+#### Supervision technique
+- Health dashboard : état des services (microservices, API externes, bases de données)
+- Monitoring des files d’attente BullMQ (jobs en attente, échecs)
+- Logs centralisés (Sentry) avec lien vers les utilisateurs
+
+#### Reporting & BI
+- Export personnalisable (CSV, Excel, PDF) avec sélection de champs
+- Intégration Metabase / Superset pour des dashboards interactifs
+- Scheduler de rapports (email automatique)
+
+#### Support client
+- Système de tickets intégré, avec vue et réponse
+- Live chat avec l’utilisateur
+
+### 5.3 Architecture & intégration
+
+- **Frontend** : composants Shadcn/ui + tables TanStack Table + graphiques Recharts
+- **Backend** : API routes Next.js protégées par middleware vérifiant le rôle admin
+- **Base de données** : tables `admin_logs`, `system_settings`, `feature_flags`, `support_tickets`, etc.
+- **Monitoring** : Prometheus + Grafana (métriques techniques) ; Sentry (erreurs) ; Logtail (logs)
+
+### 5.4 Tables dédiées
+
+```sql
+-- Configuration système
+CREATE TABLE system_settings ( key text PRIMARY KEY, value jsonb, updated_at timestamptz DEFAULT now() );
+-- Feature flags
+CREATE TABLE feature_flags ( name text PRIMARY KEY, enabled bool DEFAULT false, description text );
+-- Logs admin
+CREATE TABLE admin_logs ( id uuid PRIMARY KEY DEFAULT gen_random_uuid(), admin_id uuid REFERENCES profiles(id), action text, target_type text, target_id uuid, metadata jsonb, created_at timestamptz DEFAULT now() );
+-- Signalements
+CREATE TABLE reports ( id uuid PRIMARY KEY, reporter_id uuid REFERENCES profiles(id), target_type text, target_id uuid, reason text, status text DEFAULT 'pending', created_at timestamptz DEFAULT now(), resolved_at timestamptz, resolved_by uuid REFERENCES profiles(id) );
+-- Tickets
+CREATE TABLE support_tickets ( id uuid PRIMARY KEY, user_id uuid REFERENCES profiles(id), subject text, message text, status text DEFAULT 'open', priority text DEFAULT 'normal', assigned_to uuid REFERENCES profiles(id), created_at timestamptz DEFAULT now() );
+CREATE TABLE ticket_messages ( id uuid PRIMARY KEY, ticket_id uuid REFERENCES support_tickets ON DELETE CASCADE, sender_id uuid REFERENCES profiles(id), message text, attachments jsonb, created_at timestamptz DEFAULT now() );
+-- System health (métriques horaires)
+CREATE TABLE system_health ( id uuid PRIMARY KEY, service_name text, status text, latency_ms int, error_rate float, recorded_at timestamptz );
+```
+
+### 5.5 Exemples d’implémentation
+
+Middleware de protection :
+```ts
+// middleware.ts
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { NextResponse } from 'next/server';
+
+export async function middleware(req) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session?.user.id)
+      .single();
+    if (profile?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+  return res;
+}
+```
+
+Page admin (composant serveur) :
+```tsx
+// app/admin/page.tsx
+export default async function AdminPage() {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: kpis } = await supabase.rpc('get_admin_kpis');
+  // ...
+  return <AdminDashboard initialData={kpis} />;
+}
+```
+
+---
+
+## 6. Roadmap & Phases de développement
+
+### 6.1 Phase 1 – Base & Trading (terminée)
+- Authentification, profils, portefeuilles basiques
+- Marchés US et africains (données Yahoo Finance)
+- Ordres market, historique, watchlists
+- Pages d’analyse (Gemini) et apprentissage
+- Déploiement sur Vercel + Supabase
+
+### 6.2 Phase 2 – Prédictions & Gamification (en cours)
+- **Prédictions** : création, carnets d’ordres, chat, résolution
+- **Ordres avancés** : limit, stop, OCO, trailing stop
+- **Frais & slippage**
+- **Classements Redis** avec ligues et score composite
+- **Badges et streaks**
+- **Cohortes « timeless »**
+- **Flux d’activité** en temps réel (WebSocket)
+
+### 6.3 Phase 3 – Talent ID & Social (planifiée)
+- Copie de portefeuilles (social trading)
+- Salles de trading virtuelles
+- Système de mentorat (mentors, abonnements)
+- Matrice de compétences et certification
+- Portail recruteur (premium)
+
+### 6.4 Phase 4 – IA & Scale (planifiée)
+- Feedback IA post‑trade (Gemini)
+- Chatbot IA pédagogique avancé
+- Quiz personnalisés
+- Microservices (Go pour leaderboard, Python pour IA)
+- Kafka pour le streaming des événements
+- Application mobile React Native
+
+### 6.5 Phase 5 – Dashboard Admin & Outils (à venir)
+- Dashboard admin complet (RBAC, logs, tickets)
+- Feature flags et configuration dynamique
+- Supervision technique (health dashboard, alerting)
+- Reporting avancé (Metabase, exports)
+
+---
+
+## 7. Guide de développement
+
+### 7.1 Prérequis
+- Node.js 20+
+- npm ou yarn
+- Compte Supabase (gratuit)
+- Clé API Gemini
+- (Optionnel) Clé Polygon.io pour les données temps réel
+
+### 7.2 Installation
+```bash
+git clone https://github.com/welloh/welloh.git
+cd welloh
+npm install
+cp .env.example .env.local
+# Renseigner SUPABASE_URL, SUPABASE_ANON_KEY, GEMINI_API_KEY
+npm run dev
+```
+
+### 7.3 Structure du projet
+```
+welloh/
+├── app/                    # Next.js App Router
+│   ├── (auth)/             # Pages d'authentification
+│   ├── (dashboard)/        # Pages privées (dashboard, analyse, etc.)
+│   ├── admin/              # Dashboard admin (protégé)
+│   ├── api/                # API routes (trading, predictions, etc.)
+│   └── layout.tsx
+├── components/             # Composants réutilisables
+│   ├── ui/                 # Shadcn/ui
+│   ├── trading/            # Widgets de trading
+│   ├── predictions/        # Composants de prédiction
+│   └── admin/              # Composants admin
+├── lib/                    # Utilitaires, clients API, hooks
+├── services/               # Microservices (futur)
+├── public/                 # Assets
+├── styles/                 # CSS global
+├── types/                  # Types TypeScript
+├── scripts/                # Scripts utilitaires (seed, migration)
+└── supabase/               # Migrations SQL
+```
+
+### 7.4 Conventions de code
+- **TypeScript** strict
+- **ESLint** + **Prettier**
+- **Commitlint** (conventional commits)
+- Nommage des composants : PascalCase
+- Nommage des hooks : `useXxx`
+- Nommage des API routes : `route.ts` (App Router)
+
+### 7.5 Tests & Qualité
+- Tests unitaires : Jest + React Testing Library
+- Tests d’intégration : Supertest pour les API
+- E2E : Playwright
+- Couverture minimale : 70%
+
+---
+
+## 8. Sécurité & Conformité
+
+- **Authentification** : JWT via Supabase, refresh tokens, OAuth (Google, LinkedIn)
+- **2FA** obligatoire pour les administrateurs
+- **Journal d’audit** : toutes les actions admin sont enregistrées
+- **Chiffrement** : HTTPS, données sensibles hashées (bcrypt)
+- **RGPD** : consentement, export de données, droit à l’oubli
+- **Anonymisation** : outil pour anonymiser les utilisateurs tout en conservant l’historique agrégé
+- **Politiques RLS** : protection fine des données utilisateurs
+
+---
+
+## 9. Monitoring & Observabilité
+
+- **Erreurs** : Sentry (frontend & backend)
+- **Logs** : Logtail / Better Stack
+- **Métriques** : Prometheus + Grafana (latence, CPU, mémoire, taux d’erreur)
+- **Tracing** : OpenTelemetry (optionnel pour les microservices)
+- **Alertes** : Uptime Robot (disponibilité) + alertes personnalisées sur anomalies
+
+---
+
+## 10. Contribuer au projet
+
+Les contributions sont les bienvenues. Merci de consulter [CONTRIBUTING.md](CONTRIBUTING.md) et [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+---
+
+## 11. Annexes
+
+### 11.1 Glossaire
+- **PnL** : Profit and Loss
+- **Sharpe Ratio** : mesure du rendement ajusté du risque
+- **Cohorte** : groupe d’utilisateurs inscrits à la même période
+- **RLS** : Row Level Security (Sécurité au niveau des lignes)
+
+### 11.2 Références externes
+- [Supabase Documentation](https://supabase.com/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Gemini API](https://ai.google.dev/gemini-api)
+- [Polygon.io](https://polygon.io)
+
+### 11.3 Historique des versions
+| Version | Date       | Modifications                        |
+|---------|------------|--------------------------------------|
+| 1.0     | 2026-03-22 | Version initiale de la documentation |
+
+---
+
+*Ce document est le référentiel unique pour le développement de Welloh. Toute modification doit être soumise à validation par l’architecte technique.*
