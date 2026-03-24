@@ -44,35 +44,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const fetchUserAccount = useCallback(async (supabaseUser: SupabaseUser | null) => {
         if (supabaseUser) {
             try {
-                // Rely entirely on the backend trigger to have created the account.
                 const account = await getUserAccount(supabaseUser.id);
                 
                 if (account) {
-                    const userWithEmail: User = {
+                    setCurrentUser({
                         id: account.id,
                         email: supabaseUser.email,
                         fullName: account.fullName,
                         role: account.role,
-                    };
-
-                    const accountWithEmail: UserAccount = {
+                    });
+                    setCurrentUserAccount({
                         ...account,
                         email: supabaseUser.email,
-                    };
-
-                    setCurrentUser(userWithEmail);
-                    setCurrentUserAccount(accountWithEmail);
+                    });
                 } else {
-                    console.error(`User account for ${supabaseUser.id} not found.`);
+                    console.error(`Compte introuvable pour ${supabaseUser.id}`);
                     setCurrentUser(null);
                     setCurrentUserAccount(null);
                 }
-
             } catch (e: any) {
-                 console.error("Failed to fetch user account:", e.message);
-                 await supabase?.auth.signOut(); 
-                 setCurrentUser(null);
-                 setCurrentUserAccount(null);
+                console.error("Erreur de chargement du compte:", e.message);
+                setCurrentUser(null);
+                setCurrentUserAccount(null);
             }
         } else {
             setCurrentUser(null);
@@ -87,34 +80,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
-        const getInitialSession = async () => {
-            try {
-                // Safeguard: Check for an existing session with a reasonable timeout.
-                const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000));
-                
-                const result = await Promise.race([sessionPromise, timeoutPromise]) as any;
-                const session = result?.data?.session || null;
-                await fetchUserAccount(session?.user ?? null);
-            } catch (err) {
-                console.warn("L'initialisation de la session a pris trop de temps. Utilisation du mode invité.");
-                setIsLoading(false);
-            }
-        };
+        let initialised = false;
 
-        getInitialSession();
-        
-        const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            if (_event === 'SIGNED_IN' || _event === 'SIGNED_OUT') {
-                setIsLoading(true); // Show loader during transition
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'INITIAL_SESSION') {
+                initialised = true;
                 await fetchUserAccount(session?.user ?? null);
-            } else if (_event === 'TOKEN_REFRESHED') {
+            } else if (event === 'SIGNED_IN') {
+                setIsLoading(true);
                 await fetchUserAccount(session?.user ?? null);
+            } else if (event === 'SIGNED_OUT') {
+                setCurrentUser(null);
+                setCurrentUserAccount(null);
+                setIsLoading(false);
+            } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+                await fetchUserAccount(session.user);
             }
         });
 
+        // Fallback: if onAuthStateChange never fires INITIAL_SESSION within 8s
+        const fallbackTimer = setTimeout(() => {
+            if (!initialised) {
+                console.warn("INITIAL_SESSION non reçu, récupération manuelle de la session.");
+                supabase.auth.getSession().then(({ data }) => {
+                    fetchUserAccount(data?.session?.user ?? null);
+                });
+            }
+        }, 8000);
+
         return () => {
             authListener?.subscription.unsubscribe();
+            clearTimeout(fallbackTimer);
         };
     }, [fetchUserAccount]);
 
@@ -131,19 +127,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const signup = async (signupData: SignUpData) => {
         if (!supabase) throw new Error("Supabase client is not initialized.");
-        
         const { fullName, email, password } = signupData;
-
         const { error: signUpError } = await supabase.auth.signUp({
             email,
             password,
-            options: {
-                data: {
-                    full_name: fullName,
-                }
-            }
+            options: { data: { full_name: fullName } }
         });
-
         if (signUpError) {
             if (signUpError.message.includes("User already registered")) {
                 throw new Error("Un utilisateur avec cette adresse e-mail existe déjà.");
@@ -156,30 +145,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!supabase) throw new Error("Supabase client is not initialized.");
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        setCurrentUser(null);
-        setCurrentUserAccount(null);
     };
     
     const updateCurrentUserAccount = async (updates: Partial<UserAccount>) => {
         if (!currentUserAccount) return;
         const updatedAccount = await updateUserAccount(currentUserAccount.id, updates);
         if (updatedAccount) {
-            // Re-add email from auth context, as updateUserAccount returns from DB without it
-            const accountWithEmail: UserAccount = {
-                ...updatedAccount,
-                email: currentUserAccount.email,
-            };
-            setCurrentUserAccount(accountWithEmail);
+            setCurrentUserAccount({ ...updatedAccount, email: currentUserAccount.email });
         }
     };
     
-    const getAllUserAccounts = async (): Promise<UserAccount[]> => {
-        return await getAllUsers();
-    };
+    const getAllUserAccounts = async (): Promise<UserAccount[]> => getAllUsers();
 
-    const getUserAccountById = async (userId: string): Promise<UserAccount | null> => {
-        return await getUserAccount(userId);
-    };
+    const getUserAccountById = async (userId: string): Promise<UserAccount | null> => getUserAccount(userId);
 
     const addHistoryItem = async (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
         if (!currentUser) return;
@@ -193,7 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const clearHistory = async () => {
         if (!currentUser) return;
         const success = await dbClearAnalysisHistory(currentUser.id);
-        if (success && currentUserAccount) {
+        if (success) {
             setCurrentUserAccount(prev => prev ? { ...prev, analysisHistory: [] } : null);
         }
     };
@@ -209,29 +187,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const removeAlert = async (alertId: string) => {
         if (!currentUser) return;
         const success = await dbRemoveAlert(alertId);
-        if (success && currentUserAccount) {
-            const updatedAlerts = currentUserAccount.alerts.filter(a => a.id !== alertId);
+        if (success) {
+            const updatedAlerts = currentUserAccount?.alerts.filter(a => a.id !== alertId) ?? [];
             setCurrentUserAccount(prev => prev ? { ...prev, alerts: updatedAlerts } : null);
         }
     };
 
-    const value = {
-        currentUser,
-        currentUserAccount,
-        isLoading,
-        login,
-        signup,
-        logout,
-        updateCurrentUserAccount,
-        getAllUserAccounts,
-        getUserAccountById,
-        addHistoryItem,
-        clearHistory,
-        addAlert,
-        removeAlert,
-    };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={{
+            currentUser,
+            currentUserAccount,
+            isLoading,
+            login,
+            signup,
+            logout,
+            updateCurrentUserAccount,
+            getAllUserAccounts,
+            getUserAccountById,
+            addHistoryItem,
+            clearHistory,
+            addAlert,
+            removeAlert,
+        }}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => {

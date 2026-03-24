@@ -2,6 +2,9 @@ import type { StockData, MarketIndex, AnalysisData, NewsArticle, HistoricalPrice
 
 const API_BASE = '/api/gemini/generate';
 
+const FAST_MODEL = 'gemini-2.0-flash';
+const PRO_MODEL = 'gemini-2.0-flash';
+
 const cleanJsonString = (text: string): string => {
     let jsonText = text.trim();
     if (jsonText.startsWith('```json')) {
@@ -75,7 +78,7 @@ export const getFinancialAnalysis = async (
     `;
   
   try {
-    const text = await callGemini('gemini-1.5-pro', prompt, true);
+    const text = await callGemini(PRO_MODEL, prompt, true);
     const parsed = JSON.parse(cleanJsonString(text));
     if (!parsed.analysis || !parsed.news) {
         throw new Error("Réponse JSON invalide de l'API: clés 'analysis' ou 'news' manquantes.");
@@ -91,7 +94,7 @@ export const getStockData = async (ticker: string): Promise<StockData> => {
         La structure doit être : { "companyName": string, "ticker": string, "exchange": string, "price": number, "change": number, "percentChange": string, "volume": string, "summary": string (brève description de l'entreprise), "recommendation": "Acheter" | "Conserver" | "Vendre", "confidenceScore": number (0-100) }.
         Le prix doit être un nombre réaliste. Le volume doit être une chaîne de caractères formatée (ex: "1.25M"). Le 'percentChange' doit être une chaîne de caractères avec un signe (+ ou -) et un pourcentage (ex: "+1.25%").`;
     try {
-        const text = await callGemini('gemini-1.5-flash', prompt, true);
+        const text = await callGemini(FAST_MODEL, prompt, true);
         return JSON.parse(cleanJsonString(text));
     } catch (error) {
         handleApiError(error, "Impossible de générer les données de l'action.");
@@ -117,7 +120,7 @@ export const searchStocks = async (query: string): Promise<StockData[]> => {
         }
         Fournis des données réalistes mais fictives, basées sur des informations publiques récentes pour la crédibilité. Inclus une bonne variété d'actions, y compris des actions africaines si la requête est générale.`;
     try {
-        const text = await callGemini('gemini-1.5-pro', prompt, true);
+        const text = await callGemini(PRO_MODEL, prompt, true);
         const data = JSON.parse(cleanJsonString(text));
         if (!Array.isArray(data)) {
             throw new Error("Le format des données de recherche d'actions est invalide.");
@@ -131,7 +134,7 @@ export const searchStocks = async (query: string): Promise<StockData[]> => {
 export const getHistoricalStockData = async (ticker: string): Promise<HistoricalPricePoint[]> => {
     const prompt = `Agis comme un simulateur de données boursières historiques. Pour le ticker "${ticker}", génère une série de données de prix de clôture pour les 30 derniers jours (aujourd'hui inclus). La réponse doit être UNIQUEMENT un tableau JSON valide d'objets, sans aucun texte ou formatage supplémentaire. Chaque objet doit représenter un jour et avoir la structure : { "date": "YYYY-MM-DD", "price": number }. Le tableau doit être ordonné du jour le plus ancien au plus récent. Les prix doivent montrer une volatilité réaliste et suivre une tendance crédible basée sur la performance récente de l'entreprise.`;
     try {
-        const text = await callGemini('gemini-1.5-flash', prompt, true);
+        const text = await callGemini(FAST_MODEL, prompt, true);
         const data = JSON.parse(cleanJsonString(text));
         if (!Array.isArray(data) || data.some((item: any) => typeof item.date !== 'string' || typeof item.price !== 'number')) {
             throw new Error("Le format des données historiques est invalide.");
@@ -144,11 +147,21 @@ export const getHistoricalStockData = async (ticker: string): Promise<Historical
 
 export const getMarketOverview = async (): Promise<MarketIndex[]> => {
     const prompt = `Fournis un aperçu des principaux indices boursiers mondiaux (S&P 500, NASDAQ, CAC 40) et africains (BRVM Composite, JSE All Share, NSE All Share - Nigeria). 
-    Pour chaque indice, donne son nom, sa valeur actuelle, la variation en points, la variation en pourcentage, et un type de changement ('positive', 'negative', 'neutral').
-    La réponse doit être UNIQUEMENT un tableau JSON d'objets valide, sans aucun texte ou formatage supplémentaire comme du markdown.`;
+    Pour chaque indice, retourne un objet JSON avec exactement ces champs :
+    - "name": string (nom de l'indice)
+    - "value": string (valeur actuelle formatée, ex: "4,783.35")
+    - "change": string (variation en points avec signe, ex: "+12.5" ou "-8.2")
+    - "percentChange": string (variation en pourcentage avec signe, ex: "+0.26%" ou "-0.18%")
+    - "changeType": "positive" | "negative" | "neutral"
+    La réponse doit être UNIQUEMENT un tableau JSON valide de 5 à 6 objets, sans aucun texte ou formatage markdown supplémentaire.`;
+
     try {
-        const text = await callGemini('gemini-1.5-flash', prompt, true);
-        return JSON.parse(cleanJsonString(text));
+        const text = await callGemini(FAST_MODEL, prompt, true);
+        const data = JSON.parse(cleanJsonString(text));
+        if (!Array.isArray(data) || data.length === 0) {
+            throw new Error("Format de réponse invalide pour les indices de marché.");
+        }
+        return data;
     } catch (error) {
         handleApiError(error, "Impossible de récupérer l'aperçu du marché.");
     }
@@ -169,7 +182,7 @@ export const searchPublicTenders = async (query: string): Promise<PublicTender[]
         }
         Retourne entre 5 et 10 appels d'offres réalistes mais fictifs. Assure-toi que les données sont crédibles et bien formatées.`;
     try {
-        const text = await callGemini('gemini-1.5-pro', prompt, true);
+        const text = await callGemini(PRO_MODEL, prompt, true);
         const data = JSON.parse(cleanJsonString(text));
         if (!Array.isArray(data)) {
             throw new Error("Le format des données des appels d'offres est invalide.");
@@ -186,7 +199,7 @@ export const generateStrategyStream = async (prompt: string): Promise<AsyncItera
     const res = await fetch(API_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gemini-1.5-flash', prompt: fullPrompt, stream: true }),
+        body: JSON.stringify({ model: FAST_MODEL, prompt: fullPrompt, stream: true }),
     });
 
     if (!res.ok || !res.body) {
@@ -231,7 +244,7 @@ export const generatePredictionIdeas = async (category: string): Promise<{ title
     }
     Assure-toi que les prédictions sont réalistes, d'actualité, et axées sur l'Afrique si la catégorie s'y prête.`;
     try {
-        const text = await callGemini('gemini-1.5-flash', prompt);
+        const text = await callGemini(FAST_MODEL, prompt);
         const data = JSON.parse(cleanJsonString(text));
         if (!Array.isArray(data)) throw new Error("Format invalide");
         return data;
@@ -273,7 +286,7 @@ Analyse cette décision de trading et fournis un feedback pédagogique. Réponds
   "advice": "Conseil concret pour le prochain trade (1 phrase)"
 }`;
     try {
-        const text = await callGemini('gemini-1.5-flash', prompt);
+        const text = await callGemini(FAST_MODEL, prompt);
         return JSON.parse(cleanJsonString(text));
     } catch (error) {
         handleApiError(error, "Impossible de générer le feedback post-trade.");
@@ -294,7 +307,7 @@ Réponds UNIQUEMENT avec un tableau JSON valide sans texte ni markdown. Chaque o
 
 Les questions doivent être pertinentes pour les marchés africains et mondiaux. Pour débutant: notions de base. Pour intermédiaire: analyse technique/fondamentale. Pour avancé: stratégies complexes, ratios avancés.`;
     try {
-        const text = await callGemini('gemini-1.5-flash', prompt);
+        const text = await callGemini(FAST_MODEL, prompt);
         const data = JSON.parse(cleanJsonString(text));
         if (!Array.isArray(data)) throw new Error("Format inattendu");
         return data;
@@ -312,7 +325,7 @@ export const getEducationalContentStream = async (topic: string): Promise<AsyncI
     const res = await fetch(API_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gemini-1.5-flash', prompt, stream: true }),
+        body: JSON.stringify({ model: FAST_MODEL, prompt, stream: true }),
     });
 
     if (!res.ok || !res.body) {
