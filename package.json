@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "tsx server/index.ts",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -12,11 +13,16 @@
     "@google/genai": "^1.25.0",
     "@supabase/supabase-js": "^2.44.4",
     "@tailwindcss/postcss": "^4.2.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-markdown": "9.0.1",
     "recharts": "2.12.7",
     "remark-gfm": "4.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {

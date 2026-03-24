@@ -65,7 +65,7 @@ const EducationView: React.FC = () => {
         const stream = await getEducationalContentStream(topic);
         let fullText = '';
         for await (const chunk of stream) {
-            const chunkText = chunk.text;
+            const chunkText = typeof chunk === 'string' ? chunk : (chunk as any).text;
             if (chunkText) {
                 fullText += chunkText;
                 setModalContent(fullText);

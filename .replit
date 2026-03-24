@@ -1,6 +1,7 @@
 modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
+integrations = ["javascript_database:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
@@ -17,6 +18,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start server"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -29,12 +34,28 @@ waitForPort = 5000
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "Start server"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=3000 npm run server"
+waitForPort = 3000
+
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
 localPort = 5001
+externalPort = 3000
+
+[[ports]]
+localPort = 3000
 externalPort = 3000
 
 [deployment]
@@ -45,5 +66,5 @@ publicDir = "dist"
 [userenv]
 
 [userenv.shared]
-VITE_SUPABASE_URL = "https://cfnihxftwckbwsccnpni.supabase.co"
-VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmbmloeGZ0d2NrYndzY2NucG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MTQwMTgsImV4cCI6MjA3Nzk5MDAxOH0.ZOaqp843ESxM560ZJGmcrc_DZcWJjGvxuLQwdMKJ54k"
+VITE_SUPABASE_URL = "https://ekamezpxyzaseajfmxsj.supabase.co"
+VITE_SUPABASE_ANON_KEY = "sb_publishable_KFID40R_N5qVwKREDRhi-w_Cn7R5Km8"

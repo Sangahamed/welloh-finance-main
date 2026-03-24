@@ -26,7 +26,7 @@ const StrategyView: React.FC = () => {
             
             let fullText = '';
             for await (const chunk of response) {
-                const chunkText = chunk.text;
+                const chunkText = typeof chunk === 'string' ? chunk : (chunk as any).text;
                 if (chunkText) {
                     fullText += chunkText;
                     setStrategy(fullText);
