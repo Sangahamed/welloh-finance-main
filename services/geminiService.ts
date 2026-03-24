@@ -15,30 +15,39 @@ const cleanJsonString = (text: string): string => {
     return jsonText;
 };
 
+const QUOTA_ERROR_MESSAGE =
+    "⚠️ Quota API Gemini épuisé. La clé API configurée n'a plus de crédit disponible. " +
+    "Rendez-vous sur https://aistudio.google.com pour créer ou vérifier votre clé, " +
+    "puis mettez-la à jour dans les secrets du projet Replit (GEMINI_API_KEY).";
+
 async function callGemini(model: string, prompt: string, useSearch = false): Promise<string> {
     const res = await fetch(API_BASE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model, prompt, useSearch }),
     });
+    const data = await res.json().catch(() => ({ error: res.statusText }));
     if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        if (res.status === 429) {
-            throw new Error("Limite de quota API atteinte. Vous avez effectué trop de requêtes aujourd'hui. Veuillez réessayer demain.");
-        }
-        throw new Error(err.error || `Erreur serveur: ${res.status}`);
+        if (res.status === 429) throw new Error(QUOTA_ERROR_MESSAGE);
+        throw new Error(data.error || `Erreur serveur: ${res.status}`);
     }
-    const data = await res.json();
+    if (!data.text) throw new Error(data.error || "Réponse vide reçue du serveur.");
     return data.text;
 }
 
 const handleApiError = (error: unknown, genericErrorMessage: string): never => {
     console.error(`API Error:`, error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes("Limite de quota")) {
-        throw new Error(errorMessage);
+    const msg = error instanceof Error ? error.message : String(error);
+    // Preserve quota / well-known errors as-is so the UI can display them directly
+    if (
+        msg.includes("Quota API Gemini") ||
+        msg.includes("quota") ||
+        msg.includes("RESOURCE_EXHAUSTED") ||
+        msg.includes("aistudio.google.com")
+    ) {
+        throw new Error(msg);
     }
-    throw new Error(`${genericErrorMessage} L'API a peut-être renvoyé une erreur ou un format inattendu.`);
+    throw new Error(`${genericErrorMessage} (${msg})`);
 };
 
 

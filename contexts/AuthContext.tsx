@@ -80,13 +80,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
-        let initialised = false;
+        // Step 1: Fast initial load directly from stored session (no network call)
+        supabase.auth.getSession().then(({ data }) => {
+            fetchUserAccount(data?.session?.user ?? null);
+        }).catch(() => {
+            setIsLoading(false);
+        });
 
+        // Step 2: Listen for subsequent auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'INITIAL_SESSION') {
-                initialised = true;
-                await fetchUserAccount(session?.user ?? null);
-            } else if (event === 'SIGNED_IN') {
+            if (event === 'SIGNED_IN') {
                 setIsLoading(true);
                 await fetchUserAccount(session?.user ?? null);
             } else if (event === 'SIGNED_OUT') {
@@ -96,21 +99,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else if (event === 'TOKEN_REFRESHED' && session?.user) {
                 await fetchUserAccount(session.user);
             }
+            // INITIAL_SESSION is handled by getSession() above — no duplicate call needed
         });
-
-        // Fallback: if onAuthStateChange never fires INITIAL_SESSION within 8s
-        const fallbackTimer = setTimeout(() => {
-            if (!initialised) {
-                console.warn("INITIAL_SESSION non reçu, récupération manuelle de la session.");
-                supabase.auth.getSession().then(({ data }) => {
-                    fetchUserAccount(data?.session?.user ?? null);
-                });
-            }
-        }, 8000);
 
         return () => {
             authListener?.subscription.unsubscribe();
-            clearTimeout(fallbackTimer);
         };
     }, [fetchUserAccount]);
 
